@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import KakaoMap from "@/components/v2/KakaoMap";
 
 type Property = {
   id: number;
@@ -48,6 +49,10 @@ function getBadge(property: Property) {
   return "신축빌라";
 }
 
+function valueOrAsk(value?: string | null) {
+  return value && value.trim() !== "" ? value : "문의";
+}
+
 export default function PropertyDetail({ property }: { property: Property }) {
   const images =
     property.images && property.images.length > 0
@@ -56,10 +61,19 @@ export default function PropertyDetail({ property }: { property: Property }) {
         ? [property.image]
         : [fallbackImage];
 
-  const [selectedImage, setSelectedImage] = useState(images[0]);
+  const [imageIndex, setImageIndex] = useState(0);
+  const selectedImage = images[imageIndex];
 
   const phone = property.manager_phone || "010-5858-1942";
   const features = property.features || [];
+
+  const prevImage = () => {
+    setImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+  };
+
+  const nextImage = () => {
+    setImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+  };
 
   return (
     <main className="min-h-screen bg-gray-50 pb-28">
@@ -96,8 +110,28 @@ export default function PropertyDetail({ property }: { property: Property }) {
             />
 
             <div className="absolute left-4 top-4 rounded-full bg-black/70 px-4 py-2 text-sm font-black text-white">
-              사진 {images.indexOf(selectedImage) + 1} / {images.length}
+              사진 {imageIndex + 1} / {images.length}
             </div>
+
+            {images.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={prevImage}
+                  className="absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-2xl font-black text-white"
+                >
+                  ‹
+                </button>
+
+                <button
+                  type="button"
+                  onClick={nextImage}
+                  className="absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-2xl font-black text-white"
+                >
+                  ›
+                </button>
+              </>
+            )}
           </div>
 
           {images.length > 1 && (
@@ -106,9 +140,9 @@ export default function PropertyDetail({ property }: { property: Property }) {
                 <button
                   key={`${url}-${index}`}
                   type="button"
-                  onClick={() => setSelectedImage(url)}
+                  onClick={() => setImageIndex(index)}
                   className={`h-20 w-28 shrink-0 overflow-hidden rounded-2xl border-4 ${
-                    selectedImage === url
+                    imageIndex === index
                       ? "border-yellow-400"
                       : "border-transparent opacity-70"
                   }`}
@@ -124,58 +158,43 @@ export default function PropertyDetail({ property }: { property: Property }) {
           )}
         </div>
 
-        <div className="mt-5 grid grid-cols-3 gap-3">
-          <div className="rounded-[1.5rem] bg-white p-5 shadow-sm">
-            <p className="text-xs font-black text-gray-400">분양가</p>
-            <p className="mt-1 text-xl font-black tracking-[-0.04em] text-blue-700 md:text-2xl">
-              {property.price || "문의"}
+        <div className="mt-5 grid grid-cols-3 gap-2 md:gap-3">
+          <div className="rounded-[1.3rem] bg-white p-3 shadow-sm md:rounded-[1.5rem] md:p-5">
+            <p className="text-[11px] font-black text-gray-400 md:text-xs">
+              분양가
+            </p>
+            <p className="mt-1 whitespace-nowrap text-sm font-black tracking-[-0.04em] text-blue-700 md:text-2xl">
+              {valueOrAsk(property.price)}
             </p>
           </div>
 
-          <div className="rounded-[1.5rem] bg-white p-5 shadow-sm">
-            <p className="text-xs font-black text-gray-400">실입주금</p>
-            <p className="mt-1 text-lg font-black tracking-[-0.04em] md:text-xl">
-              {property.deposit || "문의"}
+          <div className="rounded-[1.3rem] bg-white p-3 shadow-sm md:rounded-[1.5rem] md:p-5">
+            <p className="text-[11px] font-black text-gray-400 md:text-xs">
+              실입주금
+            </p>
+            <p className="mt-1 whitespace-nowrap text-sm font-black tracking-[-0.04em] md:text-xl">
+              {valueOrAsk(property.deposit)}
             </p>
           </div>
 
-          <div className="rounded-[1.5rem] bg-white p-5 shadow-sm">
-            <p className="text-xs font-black text-gray-400">융자금</p>
-            <p className="mt-1 text-lg font-black tracking-[-0.04em] text-slate-950 md:text-xl">
-              {property.loan || "문의"}
+          <div className="rounded-[1.3rem] bg-white p-3 shadow-sm md:rounded-[1.5rem] md:p-5">
+            <p className="text-[11px] font-black text-gray-400 md:text-xs">
+              융자금
+            </p>
+            <p className="mt-1 whitespace-nowrap text-sm font-black tracking-[-0.04em] text-slate-950 md:text-xl">
+              {valueOrAsk(property.loan)}
             </p>
           </div>
         </div>
 
         <div className="mt-5 rounded-[2rem] bg-white p-6 shadow-sm">
-          <h2 className="text-3xl font-black tracking-[-0.05em]">
-            매물 정보
-          </h2>
+          <h2 className="text-3xl font-black tracking-[-0.05em]">매물 정보</h2>
 
           <div className="mt-5 grid grid-cols-2 gap-3">
-            <div className="rounded-2xl bg-gray-50 p-4">
-              <p className="text-xs font-black text-gray-400">구조</p>
-              <p className="mt-1 font-black">
-                {property.rooms || property.room_type || "문의"}
-              </p>
-            </div>
-
-            <div className="rounded-2xl bg-gray-50 p-4">
-              <p className="text-xs font-black text-gray-400">욕실</p>
-              <p className="mt-1 font-black">{property.baths || "문의"}</p>
-            </div>
-
-            <div className="rounded-2xl bg-gray-50 p-4">
-              <p className="text-xs font-black text-gray-400">주차</p>
-              <p className="mt-1 font-black">{property.parking || "문의"}</p>
-            </div>
-
-            <div className="rounded-2xl bg-gray-50 p-4">
-              <p className="text-xs font-black text-gray-400">엘리베이터</p>
-              <p className="mt-1 font-black">
-                {property.elevator || "문의"}
-              </p>
-            </div>
+            <Info label="구조" value={property.rooms || property.room_type} />
+            <Info label="욕실" value={property.baths} />
+            <Info label="주차" value={property.parking} />
+            <Info label="엘리베이터" value={property.elevator} />
           </div>
 
           {features.length > 0 && (
@@ -196,14 +215,11 @@ export default function PropertyDetail({ property }: { property: Property }) {
           📍 정확한 주소는 매물 보호를 위해 상담 시 안내드립니다.
         </div>
 
-        <div className="mt-5 rounded-[2rem] bg-white p-6 shadow-sm">
-          <h3 className="text-3xl font-black tracking-[-0.05em]">
-            상세 설명
-          </h3>
-
-          <p className="mt-4 whitespace-pre-line text-sm font-bold leading-7 text-gray-600">
-            {property.description || "매물 설명이 없습니다."}
-          </p>
+        <div className="mt-5">
+          <KakaoMap
+            address={property.address || property.location}
+            title={property.title}
+          />
         </div>
 
         <aside className="mt-5 rounded-[2rem] bg-white p-6 shadow-sm">
@@ -232,40 +248,35 @@ export default function PropertyDetail({ property }: { property: Property }) {
             {property.manager_intro ||
               "내 조건에 맞는 신축빌라를 빠르게 안내드립니다."}
           </p>
-
-          <div className="mt-5 grid grid-cols-2 gap-3 md:hidden">
-            <a
-              href={`tel:${phone}`}
-              className="rounded-2xl bg-yellow-400 py-4 text-center font-black text-black"
-            >
-              전화
-            </a>
-
-            <a
-              href={`sms:${phone}?body=${smsBody}`}
-              className="rounded-2xl bg-slate-950 py-4 text-center font-black text-white"
-            >
-              문자
-            </a>
-          </div>
         </aside>
       </section>
 
-      <div className="fixed bottom-0 left-0 right-0 z-50 flex gap-2 bg-white/95 p-3 shadow-2xl backdrop-blur md:hidden">
-        <a
-          href={`tel:${phone}`}
-          className="flex-1 rounded-2xl bg-yellow-400 py-4 text-center font-black text-black"
-        >
-          전화 상담
-        </a>
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 p-3 shadow-2xl backdrop-blur">
+        <div className="mx-auto flex max-w-3xl gap-2">
+          <a
+            href={`tel:${phone}`}
+            className="flex-1 rounded-2xl bg-yellow-400 py-4 text-center font-black text-black"
+          >
+            전화 상담
+          </a>
 
-        <a
-          href={`sms:${phone}?body=${smsBody}`}
-          className="flex-1 rounded-2xl bg-slate-950 py-4 text-center font-black text-white"
-        >
-          문자 상담
-        </a>
+          <a
+            href={`sms:${phone}?body=${smsBody}`}
+            className="flex-1 rounded-2xl bg-slate-950 py-4 text-center font-black text-white"
+          >
+            문자 상담
+          </a>
+        </div>
       </div>
     </main>
+  );
+}
+
+function Info({ label, value }: { label: string; value?: string | null }) {
+  return (
+    <div className="rounded-2xl bg-gray-50 p-4">
+      <p className="text-xs font-black text-gray-400">{label}</p>
+      <p className="mt-1 font-black">{valueOrAsk(value)}</p>
+    </div>
   );
 }
