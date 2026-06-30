@@ -18,52 +18,56 @@ export default function KakaoMap({ address, title }: Props) {
 
   useEffect(() => {
     if (!address || !mapRef.current) return;
-    if (!window.kakao || !window.kakao.maps) return;
 
-    window.kakao.maps.load(() => {
-      const geocoder = new window.kakao.maps.services.Geocoder();
+    let timer: NodeJS.Timeout;
 
-      geocoder.addressSearch(address, (result: any[], status: string) => {
-        if (status !== window.kakao.maps.services.Status.OK || !result[0]) {
-          return;
-        }
+    const initMap = () => {
+      if (!window.kakao || !window.kakao.maps || !window.kakao.maps.services) {
+        timer = setTimeout(initMap, 300);
+        return;
+      }
 
-        const lat = Number(result[0].y);
-        const lng = Number(result[0].x);
-        const coords = new window.kakao.maps.LatLng(lat, lng);
+      window.kakao.maps.load(() => {
+        const geocoder = new window.kakao.maps.services.Geocoder();
 
-        const map = new window.kakao.maps.Map(mapRef.current, {
-          center: coords,
-          level: 3,
+        geocoder.addressSearch(address, (result: any[], status: string) => {
+          if (status !== window.kakao.maps.services.Status.OK || !result[0]) {
+            return;
+          }
+
+          const coords = new window.kakao.maps.LatLng(
+            Number(result[0].y),
+            Number(result[0].x)
+          );
+
+          const map = new window.kakao.maps.Map(mapRef.current, {
+            center: coords,
+            level: 3,
+          });
+
+          new window.kakao.maps.Marker({
+            map,
+            position: coords,
+          });
+
+          setTimeout(() => {
+            map.relayout();
+            map.setCenter(coords);
+          }, 300);
         });
-
-        const marker = new window.kakao.maps.Marker({
-          map,
-          position: coords,
-        });
-
-        const infowindow = new window.kakao.maps.InfoWindow({
-          content: `<div style="padding:8px 12px;font-size:13px;white-space:nowrap;">${
-            title || "매물 위치"
-          }</div>`,
-        });
-
-        infowindow.open(map, marker);
       });
-    });
+    };
+
+    initMap();
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
   }, [address, title]);
 
-  if (!address) {
-    return (
-      <div className="rounded-3xl bg-gray-100 p-6 text-sm text-gray-500">
-        등록된 주소가 없습니다.
-      </div>
-    );
-  }
-
   return (
-  <div className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
-    <div ref={mapRef} className="h-[320px] w-full bg-gray-100" />
-  </div>
-);
+    <div className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
+      <div ref={mapRef} className="h-[320px] w-full bg-gray-100" />
+    </div>
+  );
 }
