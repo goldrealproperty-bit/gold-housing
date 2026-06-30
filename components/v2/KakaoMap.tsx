@@ -19,6 +19,8 @@ export default function KakaoMap({ address }: Props) {
     const appKey = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
     if (!mapRef.current || !appKey) return;
 
+    const cleanAddress = address?.trim();
+
     const loadMap = () => {
       window.kakao.maps.load(() => {
         const defaultCoords = new window.kakao.maps.LatLng(37.533, 126.65);
@@ -33,21 +35,35 @@ export default function KakaoMap({ address }: Props) {
           position: defaultCoords,
         });
 
+        console.log("지도 주소:", cleanAddress);
+
+        if (!cleanAddress) {
+          console.log("주소값이 비어있어서 기본좌표로 표시됨");
+          return;
+        }
+
         const geocoder = new window.kakao.maps.services.Geocoder();
 
-        if (address) {
-          geocoder.addressSearch(address, (result: any[], status: string) => {
-            if (status === window.kakao.maps.services.Status.OK && result[0]) {
-              const coords = new window.kakao.maps.LatLng(
-                Number(result[0].y),
-                Number(result[0].x)
-              );
+        geocoder.addressSearch(cleanAddress, (result: any[], status: string) => {
+          console.log("주소 검색 결과:", cleanAddress, status, result);
 
+          if (status === window.kakao.maps.services.Status.OK && result[0]) {
+            const coords = new window.kakao.maps.LatLng(
+              Number(result[0].y),
+              Number(result[0].x)
+            );
+
+            map.setCenter(coords);
+            marker.setPosition(coords);
+
+            setTimeout(() => {
+              map.relayout();
               map.setCenter(coords);
-              marker.setPosition(coords);
-            }
-          });
-        }
+            }, 200);
+          } else {
+            console.log("주소 검색 실패:", cleanAddress, status);
+          }
+        });
       });
     };
 
