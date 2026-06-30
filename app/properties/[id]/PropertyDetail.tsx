@@ -53,6 +53,20 @@ function valueOrAsk(value?: string | null) {
   return value && value.trim() !== "" ? value : "문의";
 }
 
+function formatMoney(value?: string | null) {
+  if (!value) return "문의";
+
+  const number = Number(value.replace(/[^\d]/g, ""));
+  if (!number) return valueOrAsk(value);
+
+  const eok = Math.floor(number / 10000);
+  const man = number % 10000;
+
+  if (eok > 0 && man > 0) return `${eok}억 ${man.toLocaleString()}만원`;
+  if (eok > 0) return `${eok}억`;
+  return `${man.toLocaleString()}만원`;
+}
+
 export default function PropertyDetail({ property }: { property: Property }) {
   const images =
     property.images && property.images.length > 0
@@ -164,7 +178,7 @@ export default function PropertyDetail({ property }: { property: Property }) {
               분양가
             </p>
             <p className="mt-1 whitespace-nowrap text-sm font-black tracking-[-0.04em] text-blue-700 md:text-2xl">
-              {valueOrAsk(property.price)}
+              {formatMoney(property.price)}
             </p>
           </div>
 
@@ -173,7 +187,7 @@ export default function PropertyDetail({ property }: { property: Property }) {
               실입주금
             </p>
             <p className="mt-1 whitespace-nowrap text-sm font-black tracking-[-0.04em] md:text-xl">
-              {valueOrAsk(property.deposit)}
+              {formatMoney(property.deposit)}
             </p>
           </div>
 
@@ -182,7 +196,7 @@ export default function PropertyDetail({ property }: { property: Property }) {
               융자금
             </p>
             <p className="mt-1 whitespace-nowrap text-sm font-black tracking-[-0.04em] text-slate-950 md:text-xl">
-              {valueOrAsk(property.loan)}
+              {formatMoney(property.loan)}
             </p>
           </div>
         </div>
