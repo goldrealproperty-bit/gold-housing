@@ -27,14 +27,14 @@ export default function BottomNav() {
 
         <a
           href="/map"
-          className="flex items-center justify-center rounded-2xl py-4 text-sm font-black text-[#1D2942] active:scale-95"
+          className="flex items-center justify-center rounded-2xl bg-emerald-500 py-4 text-sm font-black text-white shadow-md active:scale-95"
         >
           지도검색
         </a>
 
         <a
           href={`tel:${phone}`}
-          className="flex items-center justify-center rounded-2xl bg-[#D4AF37] py-4 text-sm font-black text-[#1D2942] shadow-md active:scale-95"
+          className="flex items-center justify-center rounded-2xl bg-yellow-400 py-4 text-sm font-black text-[#1D2942] shadow-md active:scale-95"
         >
           전화문의
         </a>
