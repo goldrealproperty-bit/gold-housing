@@ -22,7 +22,7 @@ export default function BottomNav() {
           href={`sms:${phone}?body=${smsBody}`}
           className="flex items-center justify-center rounded-2xl bg-[#111827] py-4 text-sm font-black text-white shadow-md active:scale-95"
         >
-          문자문의
+          전화문의
         </a>
 
         <a
@@ -34,9 +34,9 @@ export default function BottomNav() {
 
         <a
           href={`tel:${phone}`}
-          className="flex items-center justify-center rounded-2xl bg-yellow-400 py-4 text-sm font-black text-[#1D2942] shadow-md active:scale-95"
+          className="flex items-center justify-center rounded-2xl bg-slate-950 py-4 text-sm font-black text-white shadow-md active:scale-95"
         >
-          전화문의
+          문자문의
         </a>
 
       </div>
