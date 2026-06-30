@@ -62,13 +62,8 @@ export default function KakaoMap({ address, title }: Props) {
   }
 
   return (
-    <div className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
-      <div className="border-b border-gray-100 px-5 py-4">
-        <h2 className="text-lg font-bold text-gray-900">위치</h2>
-        <p className="mt-1 text-sm text-gray-500">{address}</p>
-      </div>
-
-      <div ref={mapRef} className="h-[320px] w-full bg-gray-100" />
-    </div>
-  );
+  <div className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
+    <div ref={mapRef} className="h-[320px] w-full bg-gray-100" />
+  </div>
+);
 }
