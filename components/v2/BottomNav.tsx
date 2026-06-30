@@ -15,47 +15,28 @@ export default function BottomNav() {
 원하시는 조건 :`);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#E8E1D2] bg-white/95 px-3 py-3 shadow-[0_-15px_40px_rgba(29,41,66,0.10)] backdrop-blur-xl md:hidden">
-      <div className="mx-auto grid max-w-md grid-cols-4 gap-2">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#E8E1D2] bg-white/95 px-4 py-3 shadow-[0_-15px_40px_rgba(29,41,66,0.10)] backdrop-blur-xl md:hidden">
+      <div className="mx-auto grid max-w-md grid-cols-3 gap-3">
 
         <a
-          href="#properties"
-          className="flex flex-col items-center justify-center rounded-2xl py-2 transition active:scale-95"
+          href={`sms:${phone}?body=${smsBody}`}
+          className="flex items-center justify-center rounded-2xl bg-[#111827] py-4 text-sm font-black text-white shadow-md active:scale-95"
         >
-          <div className="text-2xl">🏠</div>
-          <span className="mt-1 text-[11px] font-black text-[#1D2942]">
-            실매물
-          </span>
+          문자문의
         </a>
 
         <a
           href="/map"
-          className="flex flex-col items-center justify-center rounded-2xl py-2 transition active:scale-95"
+          className="flex items-center justify-center rounded-2xl py-4 text-sm font-black text-[#1D2942] active:scale-95"
         >
-          <div className="text-2xl">🗺️</div>
-          <span className="mt-1 text-[11px] font-black text-[#1D2942]">
-            지도검색
-          </span>
-        </a>
-
-        <a
-          href={`sms:${phone}?body=${smsBody}`}
-          className="flex flex-col items-center justify-center rounded-2xl py-2 transition active:scale-95"
-        >
-          <div className="text-2xl">💬</div>
-          <span className="mt-1 text-[11px] font-black text-[#1D2942]">
-            문자상담
-          </span>
+          지도검색
         </a>
 
         <a
           href={`tel:${phone}`}
-          className="flex flex-col items-center justify-center rounded-2xl bg-[#D4AF37] py-2 shadow-md transition active:scale-95"
+          className="flex items-center justify-center rounded-2xl bg-[#D4AF37] py-4 text-sm font-black text-[#1D2942] shadow-md active:scale-95"
         >
-          <div className="text-2xl">📞</div>
-          <span className="mt-1 text-[11px] font-black text-[#1D2942]">
-            전화상담
-          </span>
+          전화문의
         </a>
 
       </div>
