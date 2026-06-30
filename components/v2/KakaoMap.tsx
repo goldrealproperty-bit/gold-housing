@@ -8,46 +8,64 @@ declare global {
   }
 }
 
-export default function KakaoMap() {
+type Props = {
+  address?: string | null;
+};
+
+export default function KakaoMap({ address }: Props) {
   const mapRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const appKey = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
-
-    console.log("KAKAO KEY:", appKey);
-
     if (!mapRef.current || !appKey) return;
 
-    const script = document.createElement("script");
-    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false`;
-    script.async = true;
-
-    script.onload = () => {
-      console.log("KAKAO SCRIPT LOADED", window.kakao);
-
+    const loadMap = () => {
       window.kakao.maps.load(() => {
-        console.log("KAKAO MAPS LOADED");
-
-        const coords = new window.kakao.maps.LatLng(37.5665, 126.978);
+        const defaultCoords = new window.kakao.maps.LatLng(37.533, 126.65);
 
         const map = new window.kakao.maps.Map(mapRef.current, {
-          center: coords,
-          level: 3,
+          center: defaultCoords,
+          level: 4,
         });
 
-        new window.kakao.maps.Marker({
+        const marker = new window.kakao.maps.Marker({
           map,
-          position: coords,
+          position: defaultCoords,
         });
+
+        const geocoder = new window.kakao.maps.services.Geocoder();
+
+        if (address) {
+          geocoder.addressSearch(address, (result: any[], status: string) => {
+            if (status === window.kakao.maps.services.Status.OK && result[0]) {
+              const coords = new window.kakao.maps.LatLng(
+                Number(result[0].y),
+                Number(result[0].x)
+              );
+
+              map.setCenter(coords);
+              marker.setPosition(coords);
+            }
+          });
+        }
       });
     };
 
+    if (window.kakao && window.kakao.maps) {
+      loadMap();
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false&libraries=services`;
+    script.async = true;
+    script.onload = loadMap;
     document.head.appendChild(script);
-  }, []);
+  }, [address]);
 
   return (
     <div className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
-      <div ref={mapRef} className="h-[320px] w-full bg-gray-200" />
+      <div ref={mapRef} className="h-[320px] w-full bg-gray-100" />
     </div>
   );
 }
