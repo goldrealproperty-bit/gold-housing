@@ -259,33 +259,6 @@ export default function PropertyDetail({ property }: { property: Property }) {
           <KakaoMap address={property.address || property.location} />
         </div>
 
-        <aside className="mt-5 rounded-[2rem] bg-white p-6 shadow-sm">
-          <div className="flex items-center gap-4">
-            {property.manager_image ? (
-              <img
-                src={property.manager_image}
-                alt={property.manager_name || "담당자"}
-                className="h-20 w-20 rounded-full object-cover"
-              />
-            ) : (
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gray-100 text-4xl">
-                👨‍💼
-              </div>
-            )}
-
-            <div>
-              <p className="text-sm font-black text-gray-400">담당자</p>
-              <h3 className="mt-1 text-2xl font-black">
-                {property.manager_name || "골드하우징"}
-              </h3>
-            </div>
-          </div>
-
-          <p className="mt-4 text-sm font-bold leading-6 text-gray-500">
-            {property.manager_intro ||
-              "내 조건에 맞는 신축빌라를 빠르게 안내드립니다."}
-          </p>
-        </aside>
       </section>
 
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 p-3 shadow-2xl backdrop-blur">
@@ -294,14 +267,14 @@ export default function PropertyDetail({ property }: { property: Property }) {
             href={`tel:${phone}`}
             className="flex-1 rounded-2xl bg-yellow-400 py-4 text-center font-black text-black"
           >
-            전화 상담
+            전화문의
           </a>
 
           <a
             href={`sms:${phone}?body=${smsBody}`}
             className="flex-1 rounded-2xl bg-slate-950 py-4 text-center font-black text-white"
           >
-            문자 상담
+            문자문의
           </a>
         </div>
       </div>
