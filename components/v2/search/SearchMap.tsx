@@ -1,5 +1,13 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+
+declare global {
+  interface Window {
+    kakao: any;
+  }
+}
+
 type Property = {
   id: number;
   title: string | null;
@@ -9,16 +17,94 @@ type Property = {
 };
 
 export default function SearchMap({ properties }: { properties: Property[] }) {
+  const mapRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const appKey = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
+    if (!appKey || !mapRef.current) return;
+
+    const loadMap = () => {
+      window.kakao.maps.load(() => {
+        if (!mapRef.current) return;
+
+        const defaultCenter = new window.kakao.maps.LatLng(37.533, 126.65);
+
+        const map = new window.kakao.maps.Map(mapRef.current, {
+          center: defaultCenter,
+          level: 7,
+        });
+
+        const geocoder = new window.kakao.maps.services.Geocoder();
+        const bounds = new window.kakao.maps.LatLngBounds();
+
+        properties.forEach((property) => {
+          const address = property.address || property.location;
+          if (!address) return;
+
+          geocoder.addressSearch(address, (result: any[], status: string) => {
+            if (status !== window.kakao.maps.services.Status.OK || !result[0]) {
+              return;
+            }
+
+            const coords = new window.kakao.maps.LatLng(
+              Number(result[0].y),
+              Number(result[0].x)
+            );
+
+            bounds.extend(coords);
+
+            const content = `
+              <a href="/properties/${property.id}"
+                style="
+                  display:block;
+                  padding:8px 12px;
+                  border-radius:999px;
+                  background:#facc15;
+                  color:#111827;
+                  font-size:13px;
+                  font-weight:900;
+                  text-decoration:none;
+                  box-shadow:0 8px 18px rgba(0,0,0,.18);
+                  white-space:nowrap;
+                  border:2px solid #111827;
+                "
+              >
+                ${property.price || "문의"}
+              </a>
+            `;
+
+            const overlay = new window.kakao.maps.CustomOverlay({
+              position: coords,
+              content,
+              yAnchor: 1,
+            });
+
+            overlay.setMap(map);
+            map.setBounds(bounds);
+          });
+        });
+
+        setTimeout(() => {
+          map.relayout();
+        }, 300);
+      });
+    };
+
+    if (window.kakao && window.kakao.maps && window.kakao.maps.services) {
+      loadMap();
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false&libraries=services`;
+    script.async = true;
+    script.onload = loadMap;
+    document.head.appendChild(script);
+  }, [properties]);
+
   return (
     <div className="sticky top-5 overflow-hidden rounded-[2rem] bg-white shadow-xl">
-      <div className="flex h-[720px] items-center justify-center bg-gray-100">
-        <div className="text-center">
-          <p className="text-2xl font-black">🗺️ 카카오 지도</p>
-          <p className="mt-3 text-gray-500">
-            현재 {properties.length}개의 매물이 있습니다.
-          </p>
-        </div>
-      </div>
+      <div ref={mapRef} className="h-[420px] w-full bg-gray-100 lg:h-[720px]" />
     </div>
   );
 }
