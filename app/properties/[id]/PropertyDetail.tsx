@@ -216,10 +216,7 @@ export default function PropertyDetail({ property }: { property: Property }) {
         </div>
 
         <div className="mt-5">
-          <KakaoMap
-            address={property.address || property.location}
-            title={property.title}
-          />
+          <KakaoMap />
         </div>
 
         <aside className="mt-5 rounded-[2rem] bg-white p-6 shadow-sm">
