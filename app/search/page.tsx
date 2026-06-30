@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import SearchMap from "../../components/v2/search/SearchMap";
 
 export const dynamic = "force-dynamic";
 
@@ -118,7 +119,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-5 pt-10 pb-12">
+      <section className="mx-auto max-w-7xl px-5 pb-12 pt-10">
         {filtered.length === 0 ? (
           <div className="rounded-[2rem] bg-white p-10 text-center shadow-sm">
             <p className="text-3xl font-black tracking-[-0.05em]">
@@ -126,9 +127,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             </p>
 
             <p className="mt-3 text-sm font-bold leading-6 text-gray-500">
-              예) (잠실)동, (송파)지역, 학교, 복층, 테라스 
-              <br />
-            
+              예) 잠실, 송파, 학교, 복층, 테라스
             </p>
 
             <a
@@ -143,10 +142,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             <div className="mb-8 flex items-end justify-between gap-4">
               <div>
                 <h2 className="text-4xl font-black tracking-[-0.06em]">
-                  매물 목록
+                  지도 검색
                 </h2>
                 <p className="mt-3 text-sm font-bold text-gray-500">
-                  마음에 드는 매물을 눌러 상세정보를 확인하세요.
+                  지도에서 위치를 보고, 마음에 드는 매물을 확인하세요.
                 </p>
               </div>
 
@@ -155,62 +154,69 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
-              {filtered.map((property) => (
-                <a
-                  key={property.id}
-                  href={`/properties/${property.id}`}
-                  className="block overflow-hidden rounded-[2rem] bg-white shadow-xl ring-1 ring-gray-100 active:scale-[0.98]"
-                >
-                  <div className="relative h-64 bg-gray-100">
-                    <img
-                      src={getImage(property.image)}
-                      alt={property.title || "매물"}
-                      className="h-full w-full object-cover"
-                    />
+            <div className="grid gap-8 lg:grid-cols-[520px_1fr]">
+              <SearchMap properties={filtered} />
 
-                    <div className="absolute left-4 top-4 rounded-full bg-yellow-400 px-5 py-3 text-sm font-black text-black shadow-lg">
-                      {getBadge(property)}
-                    </div>
-                  </div>
+              <div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
+                {filtered.map((property) => (
+                  <a
+                    key={property.id}
+                    href={`/properties/${property.id}`}
+                    className="block overflow-hidden rounded-[2rem] bg-white shadow-xl ring-1 ring-gray-100 active:scale-[0.98]"
+                  >
+                    <div className="relative h-64 bg-gray-100">
+                      <img
+                        src={getImage(property.image)}
+                        alt={property.title || "매물"}
+                        className="h-full w-full object-cover"
+                      />
 
-                  <div className="p-6">
-                    <h2 className="line-clamp-1 text-3xl font-black tracking-[-0.05em]">
-                      {property.title || "매물명 없음"}
-                    </h2>
-
-                    <p className="mt-3 line-clamp-1 text-base font-bold text-gray-500">
-                      📍 {property.location || property.address || "지역 확인 중"}
-                    </p>
-
-                    <div className="my-5 h-px bg-gray-100" />
-
-                    <div className="flex items-end justify-between gap-3">
-                      <div>
-                        <p className="text-xs font-black text-gray-400">
-                          분양가
-                        </p>
-                        <p className="mt-1 text-3xl font-black tracking-[-0.05em] text-blue-700">
-                          {property.price || "문의"}
-                        </p>
-                      </div>
-
-                      <div className="text-right">
-                        <p className="text-xs font-black text-gray-400">
-                          실입주금
-                        </p>
-                        <p className="mt-1 text-2xl font-black tracking-[-0.04em]">
-                          {property.deposit || "문의"}
-                        </p>
+                      <div className="absolute left-4 top-4 rounded-full bg-yellow-400 px-5 py-3 text-sm font-black text-black shadow-lg">
+                        {getBadge(property)}
                       </div>
                     </div>
 
-                    <div className="mt-6 rounded-2xl bg-yellow-400 py-4 text-center text-base font-black text-black">
-                      상세보기 →
+                    <div className="p-6">
+                      <h2 className="line-clamp-1 text-3xl font-black tracking-[-0.05em]">
+                        {property.title || "매물명 없음"}
+                      </h2>
+
+                      <p className="mt-3 line-clamp-1 text-base font-bold text-gray-500">
+                        📍{" "}
+                        {property.location ||
+                          property.address ||
+                          "지역 확인 중"}
+                      </p>
+
+                      <div className="my-5 h-px bg-gray-100" />
+
+                      <div className="flex items-end justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-black text-gray-400">
+                            분양가
+                          </p>
+                          <p className="mt-1 text-3xl font-black tracking-[-0.05em] text-blue-700">
+                            {property.price || "문의"}
+                          </p>
+                        </div>
+
+                        <div className="text-right">
+                          <p className="text-xs font-black text-gray-400">
+                            실입주금
+                          </p>
+                          <p className="mt-1 text-2xl font-black tracking-[-0.04em]">
+                            {property.deposit || "문의"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-6 rounded-2xl bg-yellow-400 py-4 text-center text-base font-black text-black">
+                        상세보기 →
+                      </div>
                     </div>
-                  </div>
-                </a>
-              ))}
+                  </a>
+                ))}
+              </div>
             </div>
 
             <div className="mt-10 rounded-[2rem] bg-white p-5 shadow-sm">

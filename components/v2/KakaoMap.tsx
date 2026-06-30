@@ -13,75 +13,92 @@ type Props = {
 };
 
 export default function KakaoMap({ address }: Props) {
-  const mapRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const appKey = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
-    if (!mapRef.current || !appKey) return;
 
-    const cleanAddress = address?.trim();
+    if (!appKey || !mapRef.current || !address) return;
 
-    const loadMap = () => {
+    const initMap = () => {
       window.kakao.maps.load(() => {
-        const defaultCoords = new window.kakao.maps.LatLng(37.533, 126.65);
-
-        const map = new window.kakao.maps.Map(mapRef.current, {
-          center: defaultCoords,
-          level: 4,
-        });
-
-        const marker = new window.kakao.maps.Marker({
-          map,
-          position: defaultCoords,
-        });
-
-        console.log("지도 주소:", cleanAddress);
-
-        if (!cleanAddress) {
-          console.log("주소값이 비어있어서 기본좌표로 표시됨");
-          return;
-        }
-
         const geocoder = new window.kakao.maps.services.Geocoder();
 
-        geocoder.addressSearch(cleanAddress, (result: any[], status: string) => {
-          console.log("주소 검색 결과:", cleanAddress, status, result);
-
-          if (status === window.kakao.maps.services.Status.OK && result[0]) {
-            const coords = new window.kakao.maps.LatLng(
-              Number(result[0].y),
-              Number(result[0].x)
-            );
-
-            map.setCenter(coords);
-            marker.setPosition(coords);
-
-            setTimeout(() => {
-              map.relayout();
-              map.setCenter(coords);
-            }, 200);
-          } else {
-            console.log("주소 검색 실패:", cleanAddress, status);
+        geocoder.addressSearch(address, (result: any[], status: string) => {
+          if (
+            status !== window.kakao.maps.services.Status.OK ||
+            !result.length
+          ) {
+            console.log("주소 검색 실패");
+            return;
           }
+
+          const lat = Number(result[0].y);
+          const lng = Number(result[0].x);
+
+          // ===== 실제 위치 보호 =====
+
+          // 150~250m 정도 랜덤 이동
+          const angle = Math.random() * Math.PI * 2;
+          const distance = 150 + Math.random() * 100;
+
+          const dLat = (distance * Math.cos(angle)) / 111320;
+          const dLng =
+            (distance * Math.sin(angle)) /
+            (111320 * Math.cos((lat * Math.PI) / 180));
+
+          const fakeLat = lat + dLat;
+          const fakeLng = lng + dLng;
+
+          const center = new window.kakao.maps.LatLng(fakeLat, fakeLng);
+
+          const map = new window.kakao.maps.Map(mapRef.current, {
+            center,
+            level: 4,
+          });
+
+          new window.kakao.maps.Circle({
+            center,
+            radius: 250,
+            strokeWeight: 2,
+            strokeColor: "#FFD400",
+            strokeOpacity: 0.95,
+            strokeStyle: "solid",
+
+            fillColor: "#FFD400",
+            fillOpacity: 0.18,
+
+            map,
+          });
+
+          map.relayout();
+          map.setCenter(center);
         });
       });
     };
 
     if (window.kakao && window.kakao.maps) {
-      loadMap();
+      initMap();
       return;
     }
 
     const script = document.createElement("script");
+
     script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false&libraries=services`;
+
     script.async = true;
-    script.onload = loadMap;
+
+    script.onload = initMap;
+
     document.head.appendChild(script);
   }, [address]);
 
   return (
-    <div className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
-      <div ref={mapRef} className="h-[320px] w-full bg-gray-100" />
+    <div className="overflow-hidden rounded-[2rem] shadow-sm border border-gray-100 bg-white">
+      <div
+        ref={mapRef}
+        className="h-[320px] w-full"
+      />
     </div>
   );
 }
