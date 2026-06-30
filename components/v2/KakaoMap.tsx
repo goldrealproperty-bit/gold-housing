@@ -13,57 +13,76 @@ type Props = {
   title?: string | null;
 };
 
-export default function KakaoMap({ address, title }: Props) {
+export default function KakaoMap({ address }: Props) {
   const mapRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!address || !mapRef.current) return;
+    const appKey = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
 
-    let timer: NodeJS.Timeout;
+    if (!mapRef.current) return;
 
-    const initMap = () => {
-      if (!window.kakao || !window.kakao.maps || !window.kakao.maps.services) {
-        timer = setTimeout(initMap, 300);
-        return;
-      }
+    if (!appKey) {
+      console.error("카카오 지도 키가 없습니다.");
+      return;
+    }
 
+    const loadMap = () => {
       window.kakao.maps.load(() => {
+        if (!mapRef.current) return;
+
+        const defaultCoords = new window.kakao.maps.LatLng(
+          37.533,
+          126.65
+        );
+
+        const map = new window.kakao.maps.Map(mapRef.current, {
+          center: defaultCoords,
+          level: 4,
+        });
+
+        const marker = new window.kakao.maps.Marker({
+          map,
+          position: defaultCoords,
+        });
+
+        map.relayout();
+
+        if (!address) return;
+
         const geocoder = new window.kakao.maps.services.Geocoder();
 
         geocoder.addressSearch(address, (result: any[], status: string) => {
-          if (status !== window.kakao.maps.services.Status.OK || !result[0]) {
-            return;
-          }
+          if (status === window.kakao.maps.services.Status.OK && result[0]) {
+            const coords = new window.kakao.maps.LatLng(
+              Number(result[0].y),
+              Number(result[0].x)
+            );
 
-          const coords = new window.kakao.maps.LatLng(
-            Number(result[0].y),
-            Number(result[0].x)
-          );
-
-          const map = new window.kakao.maps.Map(mapRef.current, {
-            center: coords,
-            level: 3,
-          });
-
-          new window.kakao.maps.Marker({
-            map,
-            position: coords,
-          });
-
-          setTimeout(() => {
-            map.relayout();
             map.setCenter(coords);
-          }, 300);
+            marker.setPosition(coords);
+
+            setTimeout(() => {
+              map.relayout();
+              map.setCenter(coords);
+            }, 300);
+          } else {
+            console.log("주소 검색 실패:", address, status);
+          }
         });
       });
     };
 
-    initMap();
+    if (window.kakao && window.kakao.maps) {
+      loadMap();
+      return;
+    }
 
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [address, title]);
+    const script = document.createElement("script");
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false&libraries=services`;
+    script.async = true;
+    script.onload = loadMap;
+    document.head.appendChild(script);
+  }, [address]);
 
   return (
     <div className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">

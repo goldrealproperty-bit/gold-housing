@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Script from "next/script";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -23,7 +22,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const kakaoKey = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
+  
 
   return (
     <html
@@ -33,12 +32,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         {children}
 
-        {kakaoKey && (
-          <Script
-            src={`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoKey}&autoload=false&libraries=services`}
-            strategy="afterInteractive"
-          />
-        )}
+      
       </body>
     </html>
   );
