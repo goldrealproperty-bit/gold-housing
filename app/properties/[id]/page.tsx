@@ -10,6 +10,7 @@ type Property = {
   address: string | null;
   price: string | null;
   deposit: string | null;
+  loan: string | null;
   image: string | null;
   images: string[] | null;
   rooms: string | null;
