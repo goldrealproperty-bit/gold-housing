@@ -232,9 +232,9 @@ export default function PropertyDetail({ property }: { property: Property }) {
 
           <div className="mt-5 grid grid-cols-2 gap-3">
             <Info label="구조" value={property.rooms || property.room_type} />
-            <Info label="욕실" value={property.baths} />
-            <Info label="주차" value={property.parking} />
-            <Info label="엘리베이터" value={property.elevator} />
+            <Info label="욕실" value="2개" />
+<Info label="주차" value="100%" />
+<Info label="엘리베이터" value="있음" />
           </div>
 
           {features.length > 0 && (
