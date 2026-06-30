@@ -27,15 +27,16 @@ export default function SearchMap({ properties }: { properties: Property[] }) {
       window.kakao.maps.load(() => {
         if (!mapRef.current) return;
 
-        const defaultCenter = new window.kakao.maps.LatLng(37.533, 126.65);
-
         const map = new window.kakao.maps.Map(mapRef.current, {
-          center: defaultCenter,
+          center: new window.kakao.maps.LatLng(37.533, 126.65),
           level: 7,
         });
 
         const geocoder = new window.kakao.maps.services.Geocoder();
         const bounds = new window.kakao.maps.LatLngBounds();
+        const overlays: any[] = [];
+
+        let successCount = 0;
 
         properties.forEach((property) => {
           const address = property.address || property.location;
@@ -52,6 +53,7 @@ export default function SearchMap({ properties }: { properties: Property[] }) {
             );
 
             bounds.extend(coords);
+            successCount += 1;
 
             const content = `
               <a href="/properties/${property.id}"
@@ -79,14 +81,34 @@ export default function SearchMap({ properties }: { properties: Property[] }) {
               yAnchor: 1,
             });
 
+            overlays.push(overlay);
             overlay.setMap(map);
-            map.setBounds(bounds);
+
+            if (successCount === 1) {
+              map.setCenter(coords);
+            }
+
+            if (successCount > 1) {
+              map.setBounds(bounds);
+            }
           });
         });
 
+        // 줌 레벨에 따라 가격마커 / 클러스터 느낌 전환
+        const renderByZoom = () => {
+          const level = map.getLevel();
+
+          overlays.forEach((overlay) => {
+            overlay.setMap(level >= 6 ? null : map);
+          });
+        };
+
+        window.kakao.maps.event.addListener(map, "zoom_changed", renderByZoom);
+
         setTimeout(() => {
           map.relayout();
-        }, 300);
+          renderByZoom();
+        }, 500);
       });
     };
 

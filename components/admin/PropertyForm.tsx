@@ -15,33 +15,24 @@ type PropertyFormProps = {
   onRemoveImage: (url: string) => void;
 };
 
+function onlyNumber(value: string) {
+  return value.replace(/[^\d]/g, "");
+}
+
 function parseMoney(value: string) {
-  const text = value.replace(/\s/g, "").replace(/,/g, "");
-  let total = 0;
-
-  const eok = text.match(/(\d+(?:\.\d+)?)억/);
-  const man = text.match(/(\d+(?:\.\d+)?)만원/);
-
-  if (eok) total += Number(eok[1]) * 10000;
-  if (man) total += Number(man[1]);
-
-  if (!eok && !man) {
-    const onlyNumber = text.replace(/[^\d]/g, "");
-    if (onlyNumber) total = Number(onlyNumber);
-  }
-
-  return total;
+  const number = Number(onlyNumber(value));
+  return Number.isNaN(number) ? 0 : number;
 }
 
 function formatMoney(manwon: number) {
-  if (manwon <= 0) return "문의";
+  if (!manwon) return "";
 
   const eok = Math.floor(manwon / 10000);
   const man = manwon % 10000;
 
-  if (eok > 0 && man > 0) return `${eok}억 ${man}만원`;
+  if (eok > 0 && man > 0) return `${eok}억 ${man.toLocaleString()}만원`;
   if (eok > 0) return `${eok}억`;
-  return `${man}만원`;
+  return `${man.toLocaleString()}만원`;
 }
 
 function calculateLoan(price: string, deposit: string) {
@@ -50,7 +41,8 @@ function calculateLoan(price: string, deposit: string) {
 
   if (!priceValue || !depositValue) return "";
 
-  return formatMoney(priceValue - depositValue);
+  const loan = priceValue - depositValue;
+  return loan > 0 ? formatMoney(loan) : "";
 }
 
 export default function PropertyForm({
@@ -61,26 +53,26 @@ export default function PropertyForm({
   onSubmit,
   onCancelEdit,
   onPropertyImages,
-  onManagerImage,
   onRemoveImage,
 }: PropertyFormProps) {
-  function handleChange(
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = e.target;
 
     setForm((prev) => {
+      const nextValue =
+        name === "price" || name === "deposit" ? onlyNumber(value) : value;
+
       const next = {
         ...prev,
-        [name]: value,
+        [name]: nextValue,
       };
 
       if (name === "price" || name === "deposit") {
         return {
           ...next,
           loan: calculateLoan(
-            name === "price" ? value : prev.price,
-            name === "deposit" ? value : prev.deposit
+            name === "price" ? nextValue : prev.price,
+            name === "deposit" ? nextValue : prev.deposit
           ),
         };
       }
@@ -90,11 +82,19 @@ export default function PropertyForm({
   }
 
   return (
-    <form onSubmit={onSubmit} className="mt-10 rounded-3xl bg-white p-8 shadow-xl">
-      <div className="flex items-center justify-between gap-4">
-        <h2 className="text-2xl font-black">
-          {editingId ? "매물 수정" : "매물 등록"}
-        </h2>
+    <form
+      onSubmit={onSubmit}
+      className="mt-10 rounded-3xl bg-white p-6 shadow-xl md:p-8"
+    >
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h2 className="text-2xl font-black">
+            {editingId ? "매물 수정" : "신규 매물 등록"}
+          </h2>
+          <p className="mt-1 text-sm text-gray-500">
+            꼭 필요한 정보만 빠르게 입력하세요.
+          </p>
+        </div>
 
         {editingId && (
           <button
@@ -107,8 +107,11 @@ export default function PropertyForm({
         )}
       </div>
 
-      <div className="mt-8 rounded-2xl border border-dashed p-6">
-        <p className="font-bold">매물 사진 여러 장 업로드</p>
+      <div className="mt-8 rounded-2xl border border-dashed border-gray-300 p-5">
+        <p className="font-black">매물 사진 업로드</p>
+        <p className="mt-1 text-sm text-gray-500">
+          첫 번째 사진이 대표사진으로 사용됩니다.
+        </p>
 
         <input
           type="file"
@@ -123,25 +126,25 @@ export default function PropertyForm({
         )}
 
         {form.images.length > 0 && (
-          <div className="mt-5 grid gap-4 md:grid-cols-3">
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 md:grid-cols-4">
             {form.images.map((url) => (
               <div key={url} className="relative">
                 <img
                   src={url}
                   alt="업로드 이미지"
-                  className="h-48 w-full rounded-2xl object-cover"
+                  className="h-36 w-full rounded-2xl object-cover"
                 />
 
                 <button
                   type="button"
                   onClick={() => onRemoveImage(url)}
-                  className="absolute right-3 top-3 rounded-full bg-red-500 px-3 py-1 text-sm font-bold text-white"
+                  className="absolute right-2 top-2 rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white"
                 >
                   삭제
                 </button>
 
                 {form.image === url && (
-                  <span className="absolute left-3 top-3 rounded-full bg-yellow-400 px-3 py-1 text-sm font-bold text-black">
+                  <span className="absolute left-2 top-2 rounded-full bg-yellow-400 px-3 py-1 text-xs font-bold text-black">
                     대표사진
                   </span>
                 )}
@@ -152,25 +155,64 @@ export default function PropertyForm({
       </div>
 
       <div className="mt-8 grid gap-4 md:grid-cols-2">
-        <input name="title" value={form.title} onChange={handleChange} className="rounded-xl border p-4" placeholder="매물명 예: 인천 부평 3룸" />
-        <input name="location" value={form.location} onChange={handleChange} className="rounded-xl border p-4" placeholder="지역 예: 인천 부평구" />
-        <input name="address" value={form.address} onChange={handleChange} className="rounded-xl border p-4 md:col-span-2" placeholder="상세 주소 예: 인천 부평구 부평동 123-4" />
-
-        <input name="price" value={form.price} onChange={handleChange} className="rounded-xl border p-4" placeholder="분양가 예: 2억 7,900만원" />
-        <input name="deposit" value={form.deposit} onChange={handleChange} className="rounded-xl border p-4" placeholder="실입주금 예: 1,500만원" />
-
         <input
-          name="loan"
-          value={form.loan}
+          name="title"
+          value={form.title}
           onChange={handleChange}
-          className="rounded-xl border bg-gray-50 p-4 font-bold text-gray-700 md:col-span-2"
-          placeholder="융자금 자동계산"
+          className="rounded-xl border p-4"
+          placeholder="매물명 예: 인천 부평 3룸"
         />
 
-        <input name="rooms" value={form.rooms} onChange={handleChange} className="rounded-xl border p-4" placeholder="방 구조 예: 3룸" />
-        <input name="baths" value={form.baths} onChange={handleChange} className="rounded-xl border p-4" placeholder="욕실 예: 욕실 2개" />
-        <input name="parking" value={form.parking} onChange={handleChange} className="rounded-xl border p-4" placeholder="주차 예: 주차 가능" />
-        <input name="elevator" value={form.elevator} onChange={handleChange} className="rounded-xl border p-4" placeholder="엘리베이터 예: 있음" />
+        <input
+          name="location"
+          value={form.location}
+          onChange={handleChange}
+          className="rounded-xl border p-4"
+          placeholder="지역 예: 인천 부평구"
+        />
+
+        <input
+          name="address"
+          value={form.address}
+          onChange={handleChange}
+          className="rounded-xl border p-4 md:col-span-2"
+          placeholder="상세 주소 예: 부평동 123-4"
+        />
+
+        <div>
+          <input
+            name="price"
+            value={form.price}
+            onChange={handleChange}
+            inputMode="numeric"
+            className="w-full rounded-xl border p-4"
+            placeholder="분양가 숫자만 예: 27900"
+          />
+          <p className="mt-2 text-sm font-bold text-gray-500">
+            표시: {formatMoney(parseMoney(form.price)) || "미입력"}
+          </p>
+        </div>
+
+        <div>
+          <input
+            name="deposit"
+            value={form.deposit}
+            onChange={handleChange}
+            inputMode="numeric"
+            className="w-full rounded-xl border p-4"
+            placeholder="실입주금 숫자만 예: 1500"
+          />
+          <p className="mt-2 text-sm font-bold text-gray-500">
+            표시: {formatMoney(parseMoney(form.deposit)) || "미입력"}
+          </p>
+        </div>
+
+        <div className="rounded-xl border bg-gray-50 p-4 md:col-span-2">
+          <p className="text-sm font-bold text-gray-500">융자금 자동계산</p>
+          <p className="mt-1 text-xl font-black text-gray-800">
+            {form.loan || "분양가와 실입주금을 입력하면 자동 계산됩니다."}
+          </p>
+        </div>
       </div>
 
       <div className="mt-8 rounded-3xl bg-gray-50 p-6">
@@ -194,14 +236,6 @@ export default function PropertyForm({
           ))}
         </div>
       </div>
-
-      <textarea
-        name="desc"
-        value={form.desc}
-        onChange={handleChange}
-        className="mt-4 min-h-32 w-full rounded-xl border p-4"
-        placeholder="매물 설명"
-      />
 
       <FeatureSelector
         features={form.features}

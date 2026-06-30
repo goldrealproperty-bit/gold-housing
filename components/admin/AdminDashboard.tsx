@@ -31,7 +31,7 @@ const emptyForm: PropertyFormState = {
   features: [],
 };
 
-type AdminTab = "properties" | "consultations" | "reviews";
+type AdminTab = "properties" | "newProperty" | "consultations" | "reviews";
 
 export default function AdminDashboard() {
   const [tab, setTab] = useState<AdminTab>("properties");
@@ -206,6 +206,7 @@ export default function AdminDashboard() {
 
     setForm(emptyForm);
     setEditingId(null);
+    setTab("properties");
     fetchProperties();
   }
 
@@ -234,13 +235,21 @@ export default function AdminDashboard() {
       features: item.features || [],
     });
 
-    setTab("properties");
+    setTab("newProperty");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function cancelEdit() {
     setEditingId(null);
     setForm(emptyForm);
+    setTab("properties");
+  }
+
+  function startNewProperty() {
+    setEditingId(null);
+    setForm(emptyForm);
+    setTab("newProperty");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function deleteProperty(id: number) {
@@ -281,13 +290,13 @@ export default function AdminDashboard() {
   ).length;
 
   return (
-    <main className="min-h-screen bg-gray-100 px-6 py-10">
+    <main className="min-h-screen bg-gray-100 px-4 py-8 md:px-6 md:py-10">
       <div className="mx-auto max-w-7xl">
         <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-4xl font-black">관리자 페이지</h1>
+            <h1 className="text-3xl font-black md:text-4xl">관리자 페이지</h1>
             <p className="mt-2 text-gray-500">
-              매물, 상담 신청, 사진후기를 한 곳에서 관리합니다.
+              매물 등록과 관리를 더 빠르게 처리할 수 있습니다.
             </p>
           </div>
 
@@ -329,7 +338,18 @@ export default function AdminDashboard() {
                 : "bg-white text-gray-700"
             }`}
           >
-            🏠 매물관리
+            📋 매물관리
+          </button>
+
+          <button
+            onClick={startNewProperty}
+            className={`rounded-2xl px-6 py-4 font-black ${
+              tab === "newProperty"
+                ? "bg-yellow-400 text-black"
+                : "bg-white text-gray-700"
+            }`}
+          >
+            ➕ 신규등록
           </button>
 
           <button
@@ -356,25 +376,25 @@ export default function AdminDashboard() {
         </div>
 
         {tab === "properties" && (
-          <>
-            <PropertyForm
-              form={form}
-              setForm={setForm}
-              editingId={editingId}
-              uploading={uploading}
-              onSubmit={handleSubmit}
-              onCancelEdit={cancelEdit}
-              onPropertyImages={handlePropertyImages}
-              onManagerImage={handleManagerImage}
-              onRemoveImage={removeImage}
-            />
+          <PropertyList
+            properties={properties}
+            onEdit={startEdit}
+            onDelete={deleteProperty}
+          />
+        )}
 
-            <PropertyList
-              properties={properties}
-              onEdit={startEdit}
-              onDelete={deleteProperty}
-            />
-          </>
+        {tab === "newProperty" && (
+          <PropertyForm
+            form={form}
+            setForm={setForm}
+            editingId={editingId}
+            uploading={uploading}
+            onSubmit={handleSubmit}
+            onCancelEdit={cancelEdit}
+            onPropertyImages={handlePropertyImages}
+            onManagerImage={handleManagerImage}
+            onRemoveImage={removeImage}
+          />
         )}
 
         {tab === "consultations" && (
