@@ -20,22 +20,22 @@ export default function BottomNav() {
 
         <a
           href={`sms:${phone}?body=${smsBody}`}
-          className="flex items-center justify-center rounded-2xl bg-[#111827] py-4 text-sm font-black text-white shadow-md active:scale-95"
-        >
+           className="flex items-center justify-center rounded-2xl bg-yellow-400 py-4 text-sm font-black text-black shadow-md active:scale-95"
+>
           전화문의
         </a>
 
         <a
           href="/map"
-          className="flex items-center justify-center rounded-2xl bg-emerald-500 py-4 text-sm font-black text-white shadow-md active:scale-95"
-        >
+          className="flex items-center justify-center rounded-2xl bg-yellow-400 py-4 text-sm font-black text-black shadow-md active:scale-95"
+>
           지도검색
         </a>
 
         <a
           href={`tel:${phone}`}
           className="flex items-center justify-center rounded-2xl bg-slate-950 py-4 text-sm font-black text-white shadow-md active:scale-95"
-        >
+>
           문자문의
         </a>
 
