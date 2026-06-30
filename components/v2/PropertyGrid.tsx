@@ -27,16 +27,7 @@ function getImage(image: string | null) {
     ? image
     : "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?q=80&w=1200&auto=format&fit=crop";
 }
-function getBadge(property: Property) {
-  const features = property.features || [];
 
-  if (features.some((item) => item.includes("무입"))) return "무입가능";
-  if (features.some((item) => item.includes("역세권"))) return "역세권";
-  if (features.some((item) => item.includes("테라스"))) return "테라스";
-  if (features.some((item) => item.includes("복층"))) return "복층";
-
-  return property.room_type || "신축빌라";
-}
 function PropertyCard({ property }: { property: Property }) {
     const visibleFeatures = (property.features || []).slice(0, 3);
   return (
