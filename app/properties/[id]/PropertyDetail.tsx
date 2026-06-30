@@ -76,8 +76,9 @@ export default function PropertyDetail({ property }: { property: Property }) {
         : [fallbackImage];
 
   const [imageIndex, setImageIndex] = useState(0);
-  const selectedImage = images[imageIndex];
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
 
+  const selectedImage = images[imageIndex];
   const phone = property.manager_phone || "010-5858-1942";
   const features = property.features || [];
 
@@ -88,6 +89,27 @@ export default function PropertyDetail({ property }: { property: Property }) {
   const nextImage = () => {
     setImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
   };
+
+  function handleTouchStart(e: React.TouchEvent<HTMLDivElement>) {
+    setTouchStartX(e.touches[0].clientX);
+  }
+
+  function handleTouchEnd(e: React.TouchEvent<HTMLDivElement>) {
+    if (touchStartX === null) return;
+
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchStartX - touchEndX;
+
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) {
+        nextImage();
+      } else {
+        prevImage();
+      }
+    }
+
+    setTouchStartX(null);
+  }
 
   return (
     <main className="min-h-screen bg-gray-50 pb-28">
@@ -116,7 +138,11 @@ export default function PropertyDetail({ property }: { property: Property }) {
 
       <section className="mx-auto max-w-7xl px-5 py-6">
         <div className="overflow-hidden rounded-[2rem] bg-white shadow-xl">
-          <div className="relative h-[360px] bg-gray-200 md:h-[560px]">
+          <div
+            className="relative h-[360px] bg-gray-200 md:h-[560px]"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
             <img
               src={selectedImage}
               alt={property.title || "매물 사진"}
