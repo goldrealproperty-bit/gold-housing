@@ -28,8 +28,21 @@ function getImage(image: string | null) {
     : "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?q=80&w=1200&auto=format&fit=crop";
 }
 
+function formatMoney(value?: string | null) {
+  if (!value) return "문의";
+
+  const number = Number(value.replace(/[^\d]/g, ""));
+  if (!number) return "문의";
+
+  const eok = Math.floor(number / 10000);
+  const man = number % 10000;
+
+  if (eok > 0 && man > 0) return `${eok}억 ${man.toLocaleString()}만원`;
+  if (eok > 0) return `${eok}억`;
+  return `${man.toLocaleString()}만원`;
+}
+
 function PropertyCard({ property }: { property: Property }) {
-    const visibleFeatures = (property.features || []).slice(0, 3);
   return (
     <a
       href={`/properties/${property.id}`}
@@ -56,14 +69,14 @@ function PropertyCard({ property }: { property: Property }) {
           <div>
             <p className="text-xs font-black text-gray-400">분양가</p>
             <p className="mt-1 text-2xl font-black text-blue-700">
-              {property.price || "문의"}
+              {formatMoney(property.price)}
             </p>
           </div>
 
           <div className="text-right">
             <p className="text-xs font-black text-gray-400">실입주금</p>
             <p className="mt-1 text-lg font-black text-slate-950">
-              {property.deposit || "문의"}
+              {formatMoney(property.deposit)}
             </p>
           </div>
         </div>
