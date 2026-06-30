@@ -19,6 +19,20 @@ function getMainBadge(roomType?: string | null, features?: string[] | null) {
   return roomType || "3룸";
 }
 
+function formatMoney(value?: string | null) {
+  if (!value) return "문의";
+
+  const number = Number(value.replace(/[^\d]/g, ""));
+  if (!number) return value;
+
+  const eok = Math.floor(number / 10000);
+  const man = number % 10000;
+
+  if (eok > 0 && man > 0) return `${eok}억 ${man.toLocaleString()}만원`;
+  if (eok > 0) return `${eok}억`;
+  return `${man.toLocaleString()}만원`;
+}
+
 export default function PropertyCard({
   id,
   image,
@@ -76,12 +90,12 @@ export default function PropertyCard({
         <div className="mt-5 rounded-[1.5rem] bg-gray-50 p-5">
           <p className="text-sm font-black text-gray-500">분양가</p>
           <p className="mt-1 text-3xl font-black tracking-[-0.04em] text-blue-700">
-            {price}
+            {formatMoney(price)}
           </p>
 
           <p className="mt-4 text-sm font-black text-gray-500">실입주금</p>
           <p className="mt-1 text-xl font-black text-slate-950">
-            {deposit}
+            {formatMoney(deposit)}
           </p>
         </div>
 
