@@ -89,7 +89,7 @@ export default async function MapPage({ searchParams }: MapPageProps) {
       </section>
 
       <section className="px-5 pb-6">
-        <div className="mx-auto grid max-w-7xl gap-5 lg:grid-cols-[1fr_380px]">
+        <div className="mx-auto grid max-w-[1500px] gap-5 lg:grid-cols-[1fr_430px]">
           <div className="overflow-hidden rounded-[2rem] bg-white shadow-2xl">
             <div className="h-[62vh] min-h-[430px] w-full md:h-[76vh]">
               <MapView
@@ -140,7 +140,7 @@ export default async function MapPage({ searchParams }: MapPageProps) {
                         <p className="text-[11px] font-black text-gray-400">
                           분양가
                         </p>
-                        <p className="text-lg font-black text-blue-700">
+                        <p className="whitespace-nowrap text-lg font-black text-blue-700">
                           {formatMoney(property.price)}
                         </p>
                       </div>
@@ -149,7 +149,7 @@ export default async function MapPage({ searchParams }: MapPageProps) {
                         <p className="text-[11px] font-black text-gray-400">
                           실입주금
                         </p>
-                        <p className="text-base font-black">
+                        <p className="whitespace-nowrap text-base font-black">
                           {formatMoney(property.deposit)}
                         </p>
                       </div>
