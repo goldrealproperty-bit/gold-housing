@@ -22,9 +22,12 @@ type MapItem = {
   property: Property;
   position: any;
   address: string;
+  city: string;
+  district: string;
+  dong: string;
 };
 
-function getSafeRegion(address: string, level: number) {
+function parseAddress(address: string) {
   const parts = address
     .trim()
     .split(/\s+/)
@@ -35,7 +38,8 @@ function getSafeRegion(address: string, level: number) {
     parts[0] ||
     "지역";
 
-  const gu = parts.find((p) => p.endsWith("구") || p.endsWith("군")) || "";
+  const district =
+    parts.find((p) => p.endsWith("구") || p.endsWith("군")) || city;
 
   const dong =
     parts.find(
@@ -44,12 +48,15 @@ function getSafeRegion(address: string, level: number) {
         p.endsWith("읍") ||
         p.endsWith("면") ||
         p.endsWith("리")
-    ) || "";
+    ) || district;
 
-  if (level >= 10) return city;
-  if (level >= 7) return gu || city;
-  if (level >= 5) return dong || gu || city;
+  return { city, district, dong };
+}
 
+function getClusterName(item: MapItem, level: number) {
+  if (level >= 10) return item.city;
+  if (level >= 7) return item.district;
+  if (level >= 5) return item.dong;
   return "";
 }
 
@@ -68,7 +75,7 @@ function createRegionOverlay({
 }) {
   const content = `
     <div style="
-      min-width:74px;
+      min-width:76px;
       padding:11px 15px;
       border-radius:999px;
       background:#facc15;
@@ -157,19 +164,21 @@ export default function MapView({
           const level = map.getLevel();
 
           if (level < 5) {
-            items.forEach((item) => {
-              const markerObjects = createMapMarker({
-                windowKakao: window.kakao,
-                map,
-                position: item.position,
-                property: item.property,
-                onClick: () => {
-                  window.location.href = `/properties/${item.property.id}`;
-                },
-              });
+            items
+              .filter((item) => map.getBounds().contain(item.position))
+              .forEach((item) => {
+                const markerObjects = createMapMarker({
+                  windowKakao: window.kakao,
+                  map,
+                  position: item.position,
+                  property: item.property,
+                  onClick: () => {
+                    window.location.href = `/properties/${item.property.id}`;
+                  },
+                });
 
-              mapObjects.push(markerObjects);
-            });
+                mapObjects.push(markerObjects);
+              });
 
             return;
           }
@@ -182,7 +191,7 @@ export default function MapView({
           items.forEach((item) => {
             if (!map.getBounds().contain(item.position)) return;
 
-            const name = getSafeRegion(item.address, level);
+            const name = getClusterName(item, level);
             if (!name) return;
 
             const lat = item.position.getLat();
@@ -236,10 +245,15 @@ export default function MapView({
                 Number(result[0].x)
               );
 
+              const parsed = parseAddress(address);
+
               items.push({
                 property,
                 position,
                 address,
+                city: parsed.city,
+                district: parsed.district,
+                dong: parsed.dong,
               });
 
               bounds.extend(position);
