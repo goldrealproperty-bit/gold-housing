@@ -15,6 +15,7 @@ type MapViewProps = {
   loading: boolean;
   selectedFilter: string;
   keyword?: string;
+  onVisibleChange?: (ids: number[]) => void;
 };
 
 type MapItem = {
@@ -30,14 +31,19 @@ function getSafeRegion(address: string, level: number) {
     .filter((part) => !/[0-9]/.test(part));
 
   const city =
-    parts.find((p) => p.endsWith("시") || p.endsWith("도")) || parts[0] || "지역";
+    parts.find((p) => p.endsWith("시") || p.endsWith("도")) ||
+    parts[0] ||
+    "지역";
 
-  const gu =
-    parts.find((p) => p.endsWith("구") || p.endsWith("군")) || "";
+  const gu = parts.find((p) => p.endsWith("구") || p.endsWith("군")) || "";
 
   const dong =
     parts.find(
-      (p) => p.endsWith("동") || p.endsWith("읍") || p.endsWith("면") || p.endsWith("리")
+      (p) =>
+        p.endsWith("동") ||
+        p.endsWith("읍") ||
+        p.endsWith("면") ||
+        p.endsWith("리")
     ) || "";
 
   if (level >= 10) return city;
@@ -89,7 +95,12 @@ function createRegionOverlay({
   return overlay;
 }
 
-export default function MapView({ properties, loading, keyword }: MapViewProps) {
+export default function MapView({
+  properties,
+  loading,
+  keyword,
+  onVisibleChange,
+}: MapViewProps) {
   const mapRef = useRef<HTMLDivElement>(null);
 
   const drawMap = useCallback(() => {
@@ -118,7 +129,6 @@ export default function MapView({ properties, loading, keyword }: MapViewProps) 
 
         const items: MapItem[] = [];
         let finished = 0;
-
         const mapObjects: any[] = [];
 
         const clearMapObjects = () => {
@@ -130,8 +140,19 @@ export default function MapView({ properties, loading, keyword }: MapViewProps) 
           mapObjects.length = 0;
         };
 
+        const updateVisibleList = () => {
+          const currentBounds = map.getBounds();
+
+          const visibleIds = items
+            .filter((item) => currentBounds.contain(item.position))
+            .map((item) => item.property.id);
+
+          onVisibleChange?.(visibleIds);
+        };
+
         const render = () => {
           clearMapObjects();
+          updateVisibleList();
 
           const level = map.getLevel();
 
@@ -159,6 +180,8 @@ export default function MapView({ properties, loading, keyword }: MapViewProps) 
           >();
 
           items.forEach((item) => {
+            if (!map.getBounds().contain(item.position)) return;
+
             const name = getSafeRegion(item.address, level);
             if (!name) return;
 
@@ -223,15 +246,6 @@ export default function MapView({ properties, loading, keyword }: MapViewProps) 
             }
 
             if (finished === mapProperties.length) {
-              if (items.length === 1) {
-                map.setCenter(items[0].position);
-                map.setLevel(5);
-              }
-
-              if (items.length > 1) {
-                map.setBounds(bounds);
-              }
-
               const searchKeyword = (keyword || "").trim();
 
               if (searchKeyword) {
@@ -249,12 +263,23 @@ export default function MapView({ properties, loading, keyword }: MapViewProps) 
 
                       map.setCenter(searchPosition);
                       map.setLevel(5);
+                    } else if (items.length > 1) {
+                      map.setBounds(bounds);
                     }
 
                     setTimeout(render, 300);
                   }
                 );
               } else {
+                if (items.length === 1) {
+                  map.setCenter(items[0].position);
+                  map.setLevel(5);
+                }
+
+                if (items.length > 1) {
+                  map.setBounds(bounds);
+                }
+
                 setTimeout(render, 300);
               }
             }
@@ -262,6 +287,10 @@ export default function MapView({ properties, loading, keyword }: MapViewProps) 
         });
 
         window.kakao.maps.event.addListener(map, "zoom_changed", render);
+        window.kakao.maps.event.addListener(map, "dragend", render);
+        window.kakao.maps.event.addListener(map, "bounds_changed", () => {
+          setTimeout(updateVisibleList, 150);
+        });
 
         setTimeout(() => {
           map.relayout();
@@ -289,7 +318,7 @@ export default function MapView({ properties, loading, keyword }: MapViewProps) 
     script.onload = () => setTimeout(run, 300);
 
     document.head.appendChild(script);
-  }, [properties, loading, keyword]);
+  }, [properties, loading, keyword, onVisibleChange]);
 
   useEffect(() => {
     const timer = setTimeout(drawMap, 500);
@@ -297,7 +326,7 @@ export default function MapView({ properties, loading, keyword }: MapViewProps) 
   }, [drawMap]);
 
   return (
-    <div className="relative h-full w-full overflow-hidden rounded-[2rem] bg-gray-200">
+    <div className="relative h-full w-full overflow-hidden bg-gray-200">
       <div ref={mapRef} className="h-full w-full" />
     </div>
   );
