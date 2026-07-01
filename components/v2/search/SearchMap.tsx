@@ -34,8 +34,32 @@ export default function SearchMap({ properties }: { properties: Property[] }) {
 
         const geocoder = new window.kakao.maps.services.Geocoder();
         const bounds = new window.kakao.maps.LatLngBounds();
-        const overlays: any[] = [];
 
+        const clusterer = new window.kakao.maps.MarkerClusterer({
+          map,
+          averageCenter: true,
+          minLevel: 6,
+          disableClickZoom: false,
+          styles: [
+            {
+              width: "58px",
+              height: "58px",
+              background: "#facc15",
+              border: "3px solid #111827",
+              borderRadius: "999px",
+              color: "#111827",
+              textAlign: "center",
+              fontWeight: "900",
+              fontSize: "15px",
+              lineHeight: "52px",
+              boxShadow: "0 10px 22px rgba(0,0,0,.22)",
+            },
+          ],
+          calculator: [2, 5, 10, 20],
+          texts: (count: number) => `${count}개`,
+        });
+
+        const normalMarkers: any[] = [];
         let successCount = 0;
 
         properties.forEach((property) => {
@@ -55,7 +79,11 @@ export default function SearchMap({ properties }: { properties: Property[] }) {
             bounds.extend(coords);
             successCount += 1;
 
-            const content = `
+            const marker = new window.kakao.maps.Marker({
+              position: coords,
+            });
+
+            const priceContent = `
               <a href="/properties/${property.id}"
                 style="
                   display:block;
@@ -77,12 +105,29 @@ export default function SearchMap({ properties }: { properties: Property[] }) {
 
             const overlay = new window.kakao.maps.CustomOverlay({
               position: coords,
-              content,
+              content: priceContent,
               yAnchor: 1,
             });
 
-            overlays.push(overlay);
-            overlay.setMap(map);
+            marker.__priceOverlay = overlay;
+            normalMarkers.push(marker);
+            clusterer.addMarker(marker);
+
+            const renderByZoom = () => {
+              const level = map.getLevel();
+
+              normalMarkers.forEach((item) => {
+                if (item.__priceOverlay) {
+                  item.__priceOverlay.setMap(level < 6 ? map : null);
+                }
+              });
+            };
+
+            window.kakao.maps.event.addListener(
+              map,
+              "zoom_changed",
+              renderByZoom
+            );
 
             if (successCount === 1) {
               map.setCenter(coords);
@@ -91,34 +136,28 @@ export default function SearchMap({ properties }: { properties: Property[] }) {
             if (successCount > 1) {
               map.setBounds(bounds);
             }
+
+            setTimeout(() => {
+              map.relayout();
+              renderByZoom();
+            }, 300);
           });
         });
-
-        // 줌 레벨에 따라 가격마커 / 클러스터 느낌 전환
-        const renderByZoom = () => {
-          const level = map.getLevel();
-
-          overlays.forEach((overlay) => {
-            overlay.setMap(level >= 6 ? null : map);
-          });
-        };
-
-        window.kakao.maps.event.addListener(map, "zoom_changed", renderByZoom);
-
-        setTimeout(() => {
-          map.relayout();
-          renderByZoom();
-        }, 500);
       });
     };
 
-    if (window.kakao && window.kakao.maps && window.kakao.maps.services) {
+    if (
+      window.kakao &&
+      window.kakao.maps &&
+      window.kakao.maps.services &&
+      window.kakao.maps.MarkerClusterer
+    ) {
       loadMap();
       return;
     }
 
     const script = document.createElement("script");
-    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false&libraries=services`;
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false&libraries=services,clusterer`;
     script.async = true;
     script.onload = loadMap;
     document.head.appendChild(script);
