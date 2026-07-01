@@ -22,7 +22,7 @@ export function createMapMarker({
 
   const circle = new windowKakao.maps.Circle({
     center: position,
-    radius: 80,
+    radius: 100,
     strokeWeight: 2,
     strokeColor: pin.color,
     strokeOpacity: 0.75,
