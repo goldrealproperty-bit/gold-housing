@@ -81,7 +81,7 @@ export default function MapPageClient({ properties, keyword }: Props) {
         </a>
       </div>
 
-      <aside className="absolute bottom-4 right-4 top-4 z-30 hidden w-[430px] rounded-[2rem] bg-white p-4 text-slate-950 shadow-2xl lg:block">
+      <aside className="absolute bottom-4 right-4 top-4 z-30 hidden w-[430px] rounded-[2rem] border-[3px] border-yellow-400 bg-white p-4 text-slate-950 shadow-2xl lg:block">
         <div className="mb-4">
           <h2 className="text-2xl font-black tracking-[-0.05em]">인근 매물</h2>
           <p className="mt-1 text-sm font-bold text-gray-500">
