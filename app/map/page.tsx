@@ -4,8 +4,6 @@ import { Property } from "@/components/Map/mapTypes";
 
 export const dynamic = "force-dynamic";
 
-
-
 type MapPageProps = {
   searchParams: Promise<{
     keyword?: string;
@@ -16,6 +14,23 @@ function getImage(image: string | null) {
   return image && image.trim() !== ""
     ? image
     : "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?q=80&w=1200&auto=format&fit=crop";
+}
+
+function formatMoney(value: string | null) {
+  if (!value || value.trim() === "") return "문의";
+
+  const num = Number(value.replace(/[^0-9]/g, ""));
+
+  if (!num) return value;
+
+  if (num >= 10000) {
+    const eok = Math.floor(num / 10000);
+    const man = num % 10000;
+
+    return man > 0 ? `${eok}억 ${man.toLocaleString()}만원` : `${eok}억`;
+  }
+
+  return `${num.toLocaleString()}만원`;
 }
 
 export default async function MapPage({ searchParams }: MapPageProps) {
@@ -126,7 +141,7 @@ export default async function MapPage({ searchParams }: MapPageProps) {
                           분양가
                         </p>
                         <p className="text-lg font-black text-blue-700">
-                          {property.price || "문의"}
+                          {formatMoney(property.price)}
                         </p>
                       </div>
 
@@ -135,7 +150,7 @@ export default async function MapPage({ searchParams }: MapPageProps) {
                           실입주금
                         </p>
                         <p className="text-base font-black">
-                          {property.deposit || "문의"}
+                          {formatMoney(property.deposit)}
                         </p>
                       </div>
                     </div>
