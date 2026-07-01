@@ -3,7 +3,16 @@ import MapView from "@/components/Map/MapView";
 
 export const dynamic = "force-dynamic";
 
-export default async function MapPage() {
+type MapPageProps = {
+  searchParams: Promise<{
+    keyword?: string;
+  }>;
+};
+
+export default async function MapPage({ searchParams }: MapPageProps) {
+  const params = await searchParams;
+  const keyword = params.keyword || "";
+
   const { data } = await supabase
     .from("properties")
     .select("*")
@@ -22,23 +31,36 @@ export default async function MapPage() {
             ← 홈으로
           </a>
 
-          <h1 className="mt-5 text-4xl font-black tracking-[-0.06em]">
-            지도검색
-          </h1>
+          <form action="/map" method="get" className="mt-5">
+            <div className="flex h-16 items-center gap-3 rounded-[1.5rem] bg-white px-4 shadow-xl">
+              <span className="text-2xl">🔍</span>
 
-          <p className="mt-3 text-sm font-bold text-gray-300">
-            지도에서 매물 위치를 확인하고 상세페이지로 이동하세요.
-          </p>
+              <input
+                name="keyword"
+                defaultValue={keyword}
+                placeholder="지역 검색 예) 청라, 송도, 부평"
+                className="min-w-0 flex-1 bg-transparent text-base font-black text-slate-950 outline-none placeholder:text-gray-400"
+              />
+
+              <button
+                type="submit"
+                className="shrink-0 rounded-2xl bg-yellow-400 px-5 py-3 text-sm font-black text-black"
+              >
+                검색
+              </button>
+            </div>
+          </form>
         </div>
       </section>
 
       <section className="px-5 pb-6">
         <div className="mx-auto max-w-7xl overflow-hidden rounded-[2rem] bg-white shadow-2xl">
-          <div className="h-[72vh] w-full">
+          <div className="h-[70vh] min-h-[520px] w-full md:h-[76vh]">
             <MapView
               properties={properties}
               loading={false}
               selectedFilter="전체"
+              keyword={keyword}
             />
           </div>
         </div>

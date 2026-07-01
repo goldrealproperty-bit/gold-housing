@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { Property } from "./mapTypes";
 import { createMapMarker } from "./MapMarker";
 
@@ -14,37 +14,81 @@ type MapViewProps = {
   properties: Property[];
   loading: boolean;
   selectedFilter: string;
+  keyword?: string;
 };
 
-export default function MapView({ properties, loading }: MapViewProps) {
+type MapItem = {
+  property: Property;
+  position: any;
+  address: string;
+};
+
+function getRegion(address: string, level: number) {
+  const parts = address.trim().split(/\s+/);
+
+  if (level >= 9) {
+    return parts[0] || "기타";
+  }
+
+  if (level >= 6) {
+    return `${parts[0] || ""} ${parts[1] || ""}`.trim() || "기타";
+  }
+
+  return "";
+}
+
+function createRegionOverlay({
+  kakao,
+  map,
+  position,
+  name,
+  count,
+}: {
+  kakao: any;
+  map: any;
+  position: any;
+  name: string;
+  count: number;
+}) {
+  const content = `
+    <div style="
+      min-width:72px;
+      padding:10px 14px;
+      border-radius:999px;
+      background:#facc15;
+      border:3px solid #111827;
+      color:#111827;
+      font-size:14px;
+      font-weight:900;
+      text-align:center;
+      box-shadow:0 10px 22px rgba(0,0,0,.25);
+      white-space:nowrap;
+      cursor:pointer;
+    ">
+      ${name}<br />
+      <span style="font-size:13px;">${count}개</span>
+    </div>
+  `;
+
+  const overlay = new kakao.maps.CustomOverlay({
+    position,
+    content,
+    yAnchor: 1,
+  });
+
+  overlay.setMap(map);
+  return overlay;
+}
+
+export default function MapView({ properties, loading, keyword }: MapViewProps) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const [mapError, setMapError] = useState("");
-  const [mapStatus, setMapStatus] = useState("지도 준비 중");
-  const [retryKey, setRetryKey] = useState(0);
 
   const drawMap = useCallback(() => {
     const kakaoMapKey = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
-
-    if (loading) return;
-
-    if (!kakaoMapKey) {
-      setMapError("NEXT_PUBLIC_KAKAO_MAP_KEY가 없습니다.");
-      return;
-    }
-
-    if (!mapRef.current) {
-      setMapStatus("지도 영역 대기 중");
-      return;
-    }
-
-    setMapError("");
-    setMapStatus("지도 실행 중");
+    if (loading || !kakaoMapKey || !mapRef.current) return;
 
     const run = () => {
-      if (!window.kakao?.maps || !mapRef.current) {
-        setMapError("카카오맵 객체를 찾지 못했습니다.");
-        return;
-      }
+      if (!window.kakao?.maps || !mapRef.current) return;
 
       window.kakao.maps.load(() => {
         if (!mapRef.current) return;
@@ -52,14 +96,9 @@ export default function MapView({ properties, loading }: MapViewProps) {
         mapRef.current.innerHTML = "";
 
         const map = new window.kakao.maps.Map(mapRef.current, {
-          center: new window.kakao.maps.LatLng(37.4563, 126.7052),
-          level: 8,
+          center: new window.kakao.maps.LatLng(36.5, 127.8),
+          level: 13,
         });
-
-        setTimeout(() => {
-          window.kakao.maps.event.trigger(map, "resize");
-          map.relayout();
-        }, 700);
 
         const geocoder = new window.kakao.maps.services.Geocoder();
         const bounds = new window.kakao.maps.LatLngBounds();
@@ -68,56 +107,159 @@ export default function MapView({ properties, loading }: MapViewProps) {
           (property) => property.address || property.location
         );
 
+        const items: MapItem[] = [];
+        let finished = 0;
+
+        const overlays: any[] = [];
+        const markers: any[] = [];
+
+        const clearMapObjects = () => {
+          overlays.forEach((overlay) => overlay.setMap(null));
+          markers.forEach((marker) => marker.setMap?.(null));
+          overlays.length = 0;
+          markers.length = 0;
+        };
+
+        const render = () => {
+          clearMapObjects();
+
+          const level = map.getLevel();
+
+          if (level < 6) {
+            items.forEach((item) => {
+              createMapMarker({
+                windowKakao: window.kakao,
+                map,
+                position: item.position,
+                property: item.property,
+                onClick: () => {
+                  window.location.href = `/properties/${item.property.id}`;
+                },
+              });
+            });
+
+            return;
+          }
+
+          const groups = new Map<
+            string,
+            { name: string; count: number; lat: number; lng: number }
+          >();
+
+          items.forEach((item) => {
+            const name = getRegion(item.address, level);
+            if (!name) return;
+
+            const lat = item.position.getLat();
+            const lng = item.position.getLng();
+
+            const prev = groups.get(name);
+
+            if (prev) {
+              prev.count += 1;
+              prev.lat += lat;
+              prev.lng += lng;
+            } else {
+              groups.set(name, {
+                name,
+                count: 1,
+                lat,
+                lng,
+              });
+            }
+          });
+
+          groups.forEach((group) => {
+            const position = new window.kakao.maps.LatLng(
+              group.lat / group.count,
+              group.lng / group.count
+            );
+
+            const overlay = createRegionOverlay({
+              kakao: window.kakao,
+              map,
+              position,
+              name: group.name,
+              count: group.count,
+            });
+
+            overlays.push(overlay);
+          });
+        };
+
         if (mapProperties.length === 0) {
-          setMapError("주소가 있는 매물이 없습니다.");
+          setTimeout(() => {
+            map.relayout();
+          }, 300);
           return;
         }
-
-        let successCount = 0;
-        let failCount = 0;
-
-        setMapStatus(`주소 변환 중: ${mapProperties.length}개`);
 
         mapProperties.forEach((property) => {
           const address = property.address || property.location || "";
 
-          geocoder.addressSearch(address, (result: any, status: any) => {
-            if (status !== window.kakao.maps.services.Status.OK) {
-              failCount += 1;
-              setMapStatus(`주소 실패 ${failCount}개 / 성공 ${successCount}개`);
-              return;
+          geocoder.addressSearch(address, (result: any[], status: string) => {
+            finished += 1;
+
+            if (status === window.kakao.maps.services.Status.OK && result[0]) {
+              const position = new window.kakao.maps.LatLng(
+                Number(result[0].y),
+                Number(result[0].x)
+              );
+
+              items.push({
+                property,
+                position,
+                address,
+              });
+
+              bounds.extend(position);
             }
 
-            const position = new window.kakao.maps.LatLng(
-              result[0].y,
-              result[0].x
-            );
+            if (finished === mapProperties.length) {
+              if (items.length === 1) {
+                map.setCenter(items[0].position);
+                map.setLevel(5);
+              }
 
-            bounds.extend(position);
-            successCount += 1;
+              if (items.length > 1) {
+                map.setBounds(bounds);
+              }
 
-            createMapMarker({
-              windowKakao: window.kakao,
-              map,
-              position,
-              property,
-              onClick: () => {
-                window.location.href = `/properties/${property.id}`;
-              },
-            });
+              const searchKeyword = (keyword || "").trim();
 
-            setMapStatus(`지도 표시 성공: ${successCount}개`);
+              if (searchKeyword) {
+                geocoder.addressSearch(
+                  searchKeyword,
+                  (result: any[], status: string) => {
+                    if (
+                      status === window.kakao.maps.services.Status.OK &&
+                      result[0]
+                    ) {
+                      const searchPosition = new window.kakao.maps.LatLng(
+                        Number(result[0].y),
+                        Number(result[0].x)
+                      );
 
-            if (successCount === 1) {
-              map.setCenter(position);
-              map.setLevel(5);
-            }
+                      map.setCenter(searchPosition);
+                      map.setLevel(5);
+                    }
 
-            if (successCount > 1) {
-              map.setBounds(bounds);
+                    setTimeout(render, 300);
+                  }
+                );
+              } else {
+                setTimeout(render, 300);
+              }
             }
           });
         });
+
+        window.kakao.maps.event.addListener(map, "zoom_changed", render);
+
+        setTimeout(() => {
+          map.relayout();
+          render();
+        }, 700);
       });
     };
 
@@ -129,53 +271,27 @@ export default function MapView({ properties, loading }: MapViewProps) {
     }
 
     if (existingScript && !window.kakao?.maps) {
-      setMapStatus("카카오맵 스크립트 대기 중");
       setTimeout(run, 1000);
       return;
     }
-
-    setMapStatus("카카오맵 스크립트 로딩 중");
 
     const script = document.createElement("script");
     script.id = "kakao-map-script";
     script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoMapKey}&autoload=false&libraries=services`;
     script.async = false;
-
-    script.onload = () => {
-      setMapStatus("카카오맵 스크립트 로드 완료");
-      setTimeout(run, 300);
-    };
-
-    script.onerror = () => {
-      setMapError("카카오맵 스크립트 로드 실패. 카카오 도메인 등록을 확인해주세요.");
-    };
+    script.onload = () => setTimeout(run, 300);
 
     document.head.appendChild(script);
-  }, [properties, loading]);
+  }, [properties, loading, keyword]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      drawMap();
-    }, 500);
-
+    const timer = setTimeout(drawMap, 500);
     return () => clearTimeout(timer);
-  }, [drawMap, retryKey]);
+  }, [drawMap]);
 
   return (
-    <div className="relative h-[360px] w-full overflow-hidden rounded-[2rem] bg-gray-200 md:h-[560px]">
+    <div className="relative h-full w-full overflow-hidden rounded-[2rem] bg-gray-200">
       <div ref={mapRef} className="h-full w-full" />
-
-      <div className="absolute left-3 top-3 z-20 rounded-2xl bg-white/90 px-4 py-3 text-xs font-black text-slate-900 shadow-lg">
-        {mapError ? `지도 오류: ${mapError}` : mapStatus}
-      </div>
-
-      <button
-        type="button"
-        onClick={() => setRetryKey((prev) => prev + 1)}
-        className="absolute bottom-3 left-3 right-3 z-20 rounded-2xl bg-yellow-400 py-4 text-sm font-black text-black shadow-lg md:hidden"
-      >
-        지도 다시 불러오기
-      </button>
     </div>
   );
 }
