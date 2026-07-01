@@ -23,16 +23,26 @@ type MapItem = {
   address: string;
 };
 
-function getRegion(address: string, level: number) {
-  const parts = address.trim().split(/\s+/);
+function getSafeRegion(address: string, level: number) {
+  const parts = address
+    .trim()
+    .split(/\s+/)
+    .filter((part) => !/[0-9]/.test(part));
 
-  if (level >= 9) {
-    return parts[0] || "기타";
-  }
+  const city =
+    parts.find((p) => p.endsWith("시") || p.endsWith("도")) || parts[0] || "지역";
 
-  if (level >= 6) {
-    return `${parts[0] || ""} ${parts[1] || ""}`.trim() || "기타";
-  }
+  const gu =
+    parts.find((p) => p.endsWith("구") || p.endsWith("군")) || "";
+
+  const dong =
+    parts.find(
+      (p) => p.endsWith("동") || p.endsWith("읍") || p.endsWith("면") || p.endsWith("리")
+    ) || "";
+
+  if (level >= 10) return city;
+  if (level >= 7) return gu || city;
+  if (level >= 5) return dong || gu || city;
 
   return "";
 }
@@ -52,21 +62,20 @@ function createRegionOverlay({
 }) {
   const content = `
     <div style="
-      min-width:72px;
-      padding:10px 14px;
+      min-width:74px;
+      padding:11px 15px;
       border-radius:999px;
       background:#facc15;
-      border:3px solid #111827;
+      border:4px solid #111827;
       color:#111827;
-      font-size:14px;
+      font-size:15px;
       font-weight:900;
       text-align:center;
-      box-shadow:0 10px 22px rgba(0,0,0,.25);
+      box-shadow:0 10px 22px rgba(0,0,0,.28);
       white-space:nowrap;
-      cursor:pointer;
     ">
       ${name}<br />
-      <span style="font-size:13px;">${count}개</span>
+      <span style="font-size:14px;">${count}개</span>
     </div>
   `;
 
@@ -110,14 +119,15 @@ export default function MapView({ properties, loading, keyword }: MapViewProps) 
         const items: MapItem[] = [];
         let finished = 0;
 
-        const overlays: any[] = [];
-        const markers: any[] = [];
+        const mapObjects: any[] = [];
 
         const clearMapObjects = () => {
-          overlays.forEach((overlay) => overlay.setMap(null));
-          markers.forEach((marker) => marker.setMap?.(null));
-          overlays.length = 0;
-          markers.length = 0;
+          mapObjects.forEach((obj) => {
+            obj?.setMap?.(null);
+            obj?.circle?.setMap?.(null);
+            obj?.pinOverlay?.setMap?.(null);
+          });
+          mapObjects.length = 0;
         };
 
         const render = () => {
@@ -125,9 +135,9 @@ export default function MapView({ properties, loading, keyword }: MapViewProps) 
 
           const level = map.getLevel();
 
-          if (level < 6) {
+          if (level < 5) {
             items.forEach((item) => {
-              createMapMarker({
+              const markerObjects = createMapMarker({
                 windowKakao: window.kakao,
                 map,
                 position: item.position,
@@ -136,6 +146,8 @@ export default function MapView({ properties, loading, keyword }: MapViewProps) 
                   window.location.href = `/properties/${item.property.id}`;
                 },
               });
+
+              mapObjects.push(markerObjects);
             });
 
             return;
@@ -147,7 +159,7 @@ export default function MapView({ properties, loading, keyword }: MapViewProps) 
           >();
 
           items.forEach((item) => {
-            const name = getRegion(item.address, level);
+            const name = getSafeRegion(item.address, level);
             if (!name) return;
 
             const lat = item.position.getLat();
@@ -183,16 +195,11 @@ export default function MapView({ properties, loading, keyword }: MapViewProps) 
               count: group.count,
             });
 
-            overlays.push(overlay);
+            mapObjects.push(overlay);
           });
         };
 
-        if (mapProperties.length === 0) {
-          setTimeout(() => {
-            map.relayout();
-          }, 300);
-          return;
-        }
+        if (mapProperties.length === 0) return;
 
         mapProperties.forEach((property) => {
           const address = property.address || property.location || "";
