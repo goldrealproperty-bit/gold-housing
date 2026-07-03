@@ -56,6 +56,10 @@ function valueOrAsk(value?: string | null) {
 function formatMoney(value?: string | null) {
   if (!value) return "문의";
 
+  if (value.includes("억") || value.includes("만원")) {
+    return value;
+  }
+
   const number = Number(value.replace(/[^\d]/g, ""));
   if (!number) return valueOrAsk(value);
 
@@ -222,7 +226,7 @@ export default function PropertyDetail({ property }: { property: Property }) {
               융자금
             </p>
             <p className="mt-1 whitespace-nowrap text-sm font-black tracking-[-0.04em] text-slate-950 md:text-xl">
-              {formatMoney(property.loan)}
+              {property.loan || "문의"}
             </p>
           </div>
         </div>
@@ -233,8 +237,8 @@ export default function PropertyDetail({ property }: { property: Property }) {
           <div className="mt-5 grid grid-cols-2 gap-3">
             <Info label="구조" value={property.rooms || property.room_type} />
             <Info label="욕실" value="2개" />
-<Info label="주차" value="100%" />
-<Info label="엘리베이터" value="있음" />
+            <Info label="주차" value="100%" />
+            <Info label="엘리베이터" value="있음" />
           </div>
 
           {features.length > 0 && (
@@ -258,7 +262,6 @@ export default function PropertyDetail({ property }: { property: Property }) {
         <div className="mt-5">
           <KakaoMap address={property.address || property.location} />
         </div>
-
       </section>
 
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 p-3 shadow-2xl backdrop-blur">
