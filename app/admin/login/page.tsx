@@ -17,11 +17,12 @@ export default function AdminLoginPage() {
       const redirectTo = `${window.location.origin}/auth/callback`;
 
       const { error } = await supabase.auth.signInWithOAuth({
-        provider: "kakao",
-        options: {
-          redirectTo,
-        },
-      });
+  provider: "kakao",
+  options: {
+    redirectTo,
+    scopes: "profile_nickname profile_image",
+  },
+});
 
       if (error) {
         throw error;
